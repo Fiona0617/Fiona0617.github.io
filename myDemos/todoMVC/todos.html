@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>我的待办清单demo</title>
+  <link rel="stylesheet" href="./css/todos.css" />
+</head>
+
+<body>
+  <section class="todoapp">
+    <header class="header">
+      <h1>待办清单</h1>
+      <input autofocus="autofocus" autocomplete="off" placeholder="输入待办事项!" class="new-todo" v-model.trim="inputTodo"
+        @keyup.enter="insertTodo" />
+    </header>
+    <section class="main">
+      <input type="checkbox" class="toggle-all" v-model="isCheckAll" @change="setCheckAll" />
+      <ul class="todo-list">
+        <li class="todo" :class="{completed:item.isCompleted,editing:editTodo==item}" v-for="(item, index) in showTodoList"
+          @dblclick="checkEditing(item)">
+          <div class="view">
+            <input type="checkbox" class="toggle" v-model="item.isCompleted" />
+            <label>{{ item.content }}</label>
+            <button @click="delOne(index)" class="destroy"></button>
+          </div>
+          <input type="text" class="edit" v-model="item.content" @keyup.enter="editTodo=undefined" @blur="editTodo=undefined" />
+        </li>
+      </ul>
+    </section>
+    <footer class="footer">
+      <span class="todo-count"><strong>{{ unCompletedNum }}</strong>
+        {{ unCompletedNum > 1 ? 'items' : 'item' }} left
+      </span>
+      <ul class="filters">
+        <li>
+          <a href="#/all" :class="{selected:status=='All'}" @click="status='All'">All</a>
+        </li>
+        <li>
+          <a href="#/active" :class="{selected:status=='Active'}" @click="status='Active'">Active</a>
+        </li>
+        <li>
+          <a href="#/completed" :class="{selected:status=='Completed'}" @click="status='Completed'">Completed</a>
+        </li>
+      </ul>
+      <button @click="clearCompleted" class="clear-completed">
+        Clear completed
+      </button>
+    </footer>
+  </section>
+  <footer class="info">
+    <p>双击进入编辑状态</p>
+    <p>感谢 <a href="http://evanyou.me">Evan You</a></p>
+    <p>感谢 <a href="http://todomvc.com">TodoMVC</a></p>
+    <p><a href="https://fiona0617.github.io/">关于我</a></p>
+  </footer>
+
+  <!-- 引入vue -->
+  <script src="./lib/vue.js"></script>
+  <!-- 自己的js -->
+  <script>
+    let vm = new Vue({
+      el: '.todoapp',
+      data: {
+        // 输入的内容
+        inputTodo: '',
+        // 存储输入的内容
+        todoList: [],
+        // 设置全选状态
+        isCheckAll: false,
+        // 存储底部选中的状态的待办事项
+        status: 'All',
+        // 存储被选中的要编辑的待办事项
+        editTodo: undefined
+      },
+      methods: {
+        // 添加输入的内容
+        insertTodo() {
+          // 判断输入是否为空
+          if (this.inputTodo == '') {
+            return;
+          }
+          // 插入数据
+          this.todoList.unshift({
+            content: this.inputTodo,
+            isCompleted: false
+          });
+          // 清空输入框
+          this.inputTodo = '';
+        },
+        // 删除一条待办事项
+        delOne(index) {
+          if (window.confirm('确认删除？')) {
+            this.todoList.splice(index, 1);
+          }
+        },
+        // 设置全选
+        setCheckAll() {
+          // console.log(this.isCheckAll);
+          this.todoList.forEach(ele => {
+            ele.isCompleted = this.isCheckAll;
+          });
+        },
+        // 清空所有完成项
+        clearCompleted() {
+          if (window.confirm('确定要删除已完成事项？')) {
+            // 删除数组元素会改变数组长度及索引值对应的数据，所以从后往前删除
+            for (let i = this.todoList.length - 1; i >= 0; i--) {
+              if (this.todoList[i].isCompleted) {
+                this.todoList.splice(i, 1);
+              }
+            }
+          }
+        },
+        // 设置选中要编辑的待办事项
+        checkEditing(item) {
+          this.editTodo = item;
+        }
+      },
+      // 侦听数据
+      watch: {
+        // 深度 watcher
+        todoList: {
+          handler: function (val, oldVal) {
+            // 所有待办事项的条数
+            let lengthTodoList = this.todoList.length;
+            // 选中的条数
+            let numChecked = 0;
+            this.todoList.forEach(ele => {
+              if (ele.isCompleted) {
+                numChecked++;
+              }
+            });
+            // 对比是否全选并设置全选按钮
+            this.isCheckAll = lengthTodoList == numChecked;
+          },
+          deep: true
+        }
+      },
+      // 计算属性
+      computed: {
+        // 未完成事项个数
+        unCompletedNum() {
+          let count = 0;
+          this.todoList.forEach(ele => {
+            if (!ele.isCompleted) {
+              count++;
+            }
+          });
+          return count;
+        },
+        // 根据条件选择显示的待办清单
+        showTodoList() {
+          if (this.status == 'All') {
+            return this.todoList;
+          } else if (this.status == 'Active') {
+            let temArr = [];
+            this.todoList.forEach(ele => {
+              if (ele.isCompleted == false) {
+                temArr.push(ele);
+              }
+            });
+            return temArr;
+          } else {
+            let temArr = [];
+            this.todoList.forEach(ele => {
+              if (ele.isCompleted) {
+                temArr.push(ele);
+              }
+            });
+            return temArr;
+          }
+        }
+      },
+      // 创建完成
+      created() {
+        // 获取本地存储locaStorage
+        this.todoList = JSON.parse(window.localStorage.getItem('todos')) || [{
+          content: '吃饭',
+          isCompleted: false
+        }];
+      }
+    });
+
+    // 使用window.unboforeunload时存入本地存储
+    window.onbeforeunload = function () {
+      window.localStorage.setItem('todos', JSON.stringify(vm.todoList));
+    };
+  </script>
+</body>
+
+</html>
