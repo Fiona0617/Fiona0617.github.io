@@ -4,6 +4,10 @@ body {
 	padding: 0;
 }
 
+[v-cloak] {
+	display: none;
+}
+
 button {
 	margin: 0;
 	padding: 0;

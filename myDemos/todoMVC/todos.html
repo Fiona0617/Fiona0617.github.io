@@ -19,7 +19,7 @@
     <section class="main">
       <input type="checkbox" class="toggle-all" v-model="isCheckAll" @change="setCheckAll" />
       <ul class="todo-list">
-        <li class="todo" :class="{completed:item.isCompleted,editing:editTodo==item}" v-for="(item, index) in showTodoList"
+        <li v-cloak class="todo" :class="{completed:item.isCompleted,editing:editTodo==item}" v-for="(item, index) in showTodoList"
           @dblclick="checkEditing(item)">
           <div class="view">
             <input type="checkbox" class="toggle" v-model="item.isCompleted" />
